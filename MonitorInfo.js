@@ -14,7 +14,10 @@ MonitorInfo.prototype.setForcedId = function(value) {
 MonitorInfo.prototype.setTypeName = function(value) {
     this.typeName = value;
     let typeDirectory = path.join(this.monitor.getSnapshotBaseDirectory(), this.typeName);
-    fs.mkdirSync(typeDirectory, {recursive: true});
+
+    if (!fs.existsSync(typeDirectory)) {
+        fs.mkdirSync(typeDirectory, {recursive: true});
+    }
     return this;
 }
 

@@ -15,8 +15,13 @@ Monitor.prototype.createMonitorInfo = function() {
 
 Monitor.prototype.setBaseDirectory = function(value) {
     this.baseDirectory = value;
-    fs.mkdirSync(this.getSnapshotBaseDirectory(), {recursive: true});
-    fs.mkdirSync(this.getLogDirectory(), {recursive: true});
+
+    if (!fs.existsSync(this.getSnapshotBaseDirectory())) {
+        fs.mkdirSync(this.getSnapshotBaseDirectory(), {recursive: true});
+    }
+    if (!fs.existsSync(this.getLogDirectory())) {
+        fs.mkdirSync(this.getLogDirectory(), {recursive: true});
+    }
 }
 
 Monitor.prototype.getSnapshotBaseDirectory = function() {
