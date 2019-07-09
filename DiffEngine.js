@@ -4,7 +4,6 @@ const fs   = require('fs');
 const path = require('path');
 
 function DiffEngine() {
-    
 }
 
 DiffEngine.prototype.process = function(monitorInfo, data) {
@@ -53,28 +52,43 @@ function determineDifferences(monitorInfo, snapshot, latest) {
     let result = {differences:[]};
 
     Object.keys(latest).forEach((latestKey) => {
-        let snapshotValue = snapshot[latestKey];
-        let latestValue   = latest[latestKey];
-        if (snapshotValue == latestValue) {
-            // Both the same - not interesting
-        } else if (!snapshotValue && snapshotValue != 0 && snapshotValue != '') {
-            result.differences.push(`{}.${latestKey} set to ${latestValue}`);
-        } else {
-            // changed.
-            result.differences.push(`[${latestKey}] changed to ${latestValue} (was ${snapshotValue})`);           
+
+        if (!monitorInfo.ignoreKey(latestKey)) {
+            let snapshotValue = snapshot[latestKey];
+            let latestValue = latest[latestKey];
+            if (snapshotValue == latestValue) {
+                // Both the same - not interesting
+            } else if (!snapshotValue && snapshotValue != 0 && snapshotValue != '') {
+                result.differences.push(`[${latestKey}] set to ${latestValue}`);
+            } else {
+                // changed.
+                result.differences.push(`[${latestKey}] changed to ${latestValue} (was ${snapshotValue})`);
+            }
         }
     });
 
     return result;
 }
 
-function filesafe(text) {
+function fileSafeName(text) {
+    while (text.indexOf(':') != -1) {
+        text = text.replace(':', '[colon]');
+    }
+
+    while (text.indexOf('\\') != -1) {
+        text = text.replace('\\', '[bslash]');
+    }
+
+    while (text.indexOf('/') != -1) {
+        text = text.replace('/', '[fslash]');
+    }
+
     return text;
 }
 
 function determineSnapshotFileName(monitorInfo, item) {
     let itemId = monitorInfo.idFor(item);
-    let fileName = path.join(monitorInfo.monitor.getSnapshotBaseDirectory(), monitorInfo.typeName, filesafe(itemId) + '.json');
+    let fileName = path.join(monitorInfo.monitor.getSnapshotBaseDirectory(), monitorInfo.typeName, fileSafeName(itemId) + '.json');
     return fileName;
 }
 
