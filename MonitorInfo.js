@@ -17,17 +17,16 @@ MonitorInfo.prototype.ignoreKeys = function (value) {
 }
 
 MonitorInfo.prototype.ignoreKey = function (key) {
+    let result = false;
     if (this.ignoreKeysList) {
         this.ignoreKeysList.forEach((item) => {
             if (item == key) {
-                return true;
+                result = true;
             }
         });
     } 
-
-    return false;
+    return result;
 }
-
 
 MonitorInfo.prototype.setTypeName = function(value) {
     this.typeName = value;
@@ -45,7 +44,6 @@ MonitorInfo.prototype.setIdKey = function (value) {
     return this;
 }
 
-
 MonitorInfo.prototype.idFor = function(item) {
     if (this.forcedId) {
         return this.forcedId;
@@ -56,6 +54,5 @@ MonitorInfo.prototype.idFor = function(item) {
 MonitorInfo.prototype.descriptorFor = function(item) {
     return `${this.typeName}@${this.idFor(item)}`;
 }
-
 
 module.exports = MonitorInfo;
