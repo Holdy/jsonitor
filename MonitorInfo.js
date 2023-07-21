@@ -20,7 +20,7 @@ MonitorInfo.prototype.ignoreKey = function (key) {
     let result = false;
     if (this.ignoreKeysList) {
         this.ignoreKeysList.forEach((item) => {
-            if (item == key) {
+            if (item === key) {
                 result = true;
             }
         });

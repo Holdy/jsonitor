@@ -37,25 +37,27 @@ function pad(value) {
 }
 
 function fileSafeName(text) {
-    while (text.indexOf(':') != -1) {
+    while (text.indexOf(':') !== -1) {
         text = text.replace(':','[colon]');
     }
 
-    while (text.indexOf('\\') != -1) {
+    while (text.indexOf('\\') !== -1) {
         text = text.replace('\\', '[bslash]');
     }
 
-    while (text.indexOf('/') != -1) {
+    while (text.indexOf('/') !== -1) {
         text = text.replace('/', '[fslash]');
     }
-
 
     return text;
 }
 
 Monitor.prototype.raiseEvent = function(monitorInfo, item, text) {
-    let message =`${monitorInfo.descriptorFor(item)} - ${text}`;
-    console.log(message);
+    let timestamp = new Date();
+    let timestampPrefix = `${timestamp.getFullYear()}-${pad(timestamp.getMonth() + 1)}-${pad(timestamp.getDate())} ${pad(timestamp.getHours())}${pad(timestamp.getMinutes())}${pad(timestamp.getSeconds())}`;
+
+    let message = `${monitorInfo.descriptorFor(item)} - ${text}`;
+    console.log(timestampPrefix + ' ' + message);
 
     /*
     let timestamp = new Date();
