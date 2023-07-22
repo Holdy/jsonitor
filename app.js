@@ -1,57 +1,81 @@
-'use strict';
+"use strict";
 
-const GeoBox = require('./GeoBox');
-const erm = require('./erm');
+const GeoBox = require("./GeoBox");
+const erm = require("./erm");
 
-const Monitor     = require('./Monitor');
-const DiffEngine = require('./DiffEngine');
+const Monitor = require("./Monitor");
+const DiffEngine = require("./DiffEngine");
 
 const FASTEST_POLL_SPEED = 1;
 const SLOWEST_POLL_SPEED = 15;
 
 const geoBoxes = [
-    new GeoBox('work-building', '52.628759, 1.302008', '52.628809, 1.302414', '52.628973, 1.302225', '52.628682, 1.302226'),
-    new GeoBox('home',          '52.650202, 1.367452', '52.650121, 1.367726', '52.649977, 1.367416', '52.650101, 1.367304'),
-    new GeoBox('village',       '52.654391, 1.368849', '52.651193, 1.373584', '52.648036, 1.366595', '52.651702, 1.362688')
+  new GeoBox(
+    "work-building",
+    "52.628759, 1.302008",
+    "52.628809, 1.302414",
+    "52.628973, 1.302225",
+    "52.628682, 1.302226"
+  ),
+  new GeoBox(
+    "home",
+    "52.650202, 1.367452",
+    "52.650121, 1.367726",
+    "52.649977, 1.367416",
+    "52.650101, 1.367304"
+  ),
+  new GeoBox(
+    "village",
+    "52.654391, 1.368849",
+    "52.651193, 1.373584",
+    "52.648036, 1.366595",
+    "52.651702, 1.362688"
+  ),
 ];
 
 async function processAutoScheduledItem(data) {
- //   console.log('processing');
-    let differenceFound = await data.handlerFunction();
+  //   console.log('processing');
+  let differenceFound = await data.handlerFunction();
 
-    if (differenceFound && data.secondsBetweenPoll > FASTEST_POLL_SPEED) {
-        data.secondsBetweenPoll = FASTEST_POLL_SPEED;
- //       console.log('Found changes so setting poll to: ' + FASTEST_POLL_SPEED);
-    } else if (!differenceFound) {
-        let newPoll;
-        if (data.secondsBetweenPoll < 10) {
-            newPoll = Math.min(SLOWEST_POLL_SPEED, data.secondsBetweenPoll + 1);
-        } else if (data.secondsBetweenPoll < 30) {
-            newPoll = Math.min(SLOWEST_POLL_SPEED, data.secondsBetweenPoll + 5);
-        } else {
-            newPoll = Math.min(SLOWEST_POLL_SPEED, data.secondsBetweenPoll + 10);
-        }
-        if (newPoll !== data.secondsBetweenPoll) {
-        //    console.log('increasing poll to: ' + newPoll);
-            data.secondsBetweenPoll = newPoll;
-        }
+  if (differenceFound && data.secondsBetweenPoll > FASTEST_POLL_SPEED) {
+    data.secondsBetweenPoll = FASTEST_POLL_SPEED;
+    //       console.log('Found changes so setting poll to: ' + FASTEST_POLL_SPEED);
+  } else if (!differenceFound) {
+    let newPoll;
+    if (data.secondsBetweenPoll < 10) {
+      newPoll = Math.min(SLOWEST_POLL_SPEED, data.secondsBetweenPoll + 1);
+    } else if (data.secondsBetweenPoll < 30) {
+      newPoll = Math.min(SLOWEST_POLL_SPEED, data.secondsBetweenPoll + 5);
+    } else {
+      newPoll = Math.min(SLOWEST_POLL_SPEED, data.secondsBetweenPoll + 10);
     }
+    if (newPoll !== data.secondsBetweenPoll) {
+      //    console.log('increasing poll to: ' + newPoll);
+      data.secondsBetweenPoll = newPoll;
+    }
+  }
 
-    setTimeout(() => {processAutoScheduledItem(data);}, data.secondsBetweenPoll * 1000);
+  setTimeout(() => {
+    processAutoScheduledItem(data);
+  }, data.secondsBetweenPoll * 1000);
 }
 
 function autoSchedule(handlerFunction) {
-    let data ={
-        handlerFunction: handlerFunction,
-        secondsBetweenPoll: 15
-    };
-    processAutoScheduledItem(data);
+  let data = {
+    handlerFunction: handlerFunction,
+    secondsBetweenPoll: 15,
+  };
+  processAutoScheduledItem(data);
 }
 
 let monitor = new Monitor();
-monitor.setBaseDirectory('c:/monitor');
+monitor.setBaseDirectory("c:/monitor");
 
-let monitorInfoChris = monitor.createMonitorInfo().setTypeName('phone-data').setForcedId('chris').ignoreKeys(['t','phone.wifiinfo','phone.battery-percentage']);
+let monitorInfoChris = monitor
+  .createMonitorInfo()
+  .setTypeName("phone-data")
+  .setForcedId("chris")
+  .ignoreKeys(["t", "phone.wifiinfo", "phone.battery-percentage"]);
 
 let diffEngine = new DiffEngine();
 
@@ -93,65 +117,25 @@ autoSchedule(async () => {
 });
 */
 
-let workPcData = {
-    data: { state:'unknown'}
-};
-
-setInterval(async () => {
-
-    let entry = await erm.getAsync('https://minikeyval.herokuapp.com/keyval/get/chris-work-pc');
-
-    if (workPcData.set_ms !== entry.set_ms && entry.data) {
-        let stateChanged = workPcData.data.state !== entry.data.state;
-        workPcData = entry;
-        if (previousData && stateChanged) {
-            processNewData(previousData);
-        }
-    }
-}, 1000 * 15);
-
-
-let laptop = {
-    set_ms: Date.now(),
-    data: { state: 'unknown' }
+let defaultLaptop = {
+  set_ms: Date.now(),
+  data: { state: "unknown" },
 }; // Useful default state as - if this code is starting up, it's probably been manually triggered.
-
-setInterval(async () => {
-
-    let entry = await erm.getAsync('https://minikeyval.herokuapp.com/keyval/get/chris-laptop');
-
-    if (laptop.set_ms !== entry.set_ms && entry.data) {
-        let stateChanged = !laptop.data || laptop.data.state !== entry.data.state;
-        laptop = entry;
-        if (previousData && stateChanged) {
-            processNewData(previousData);
-        }
-    }
-}, 1000 * 15);
-
-
-autoSchedule(async () => {
-    let differenceFound = false; // A reasonable default on error.
-
-    try {
-        var json = await erm.getAsync('https://minikeyval.herokuapp.com/keyval/get/chris');
-        differenceFound = diffEngine.process(monitorInfoChris, [json]);
-        processNewData(json.data);
-    } catch (e) {
-        console.log(e);
-    }
-    return differenceFound;
-});
 
 let latestState = null;
 let previousData;
-let slackApiToken = process.env['SLACK_API_KEY'];
-let slackApiToken2 = process.env['SLACK_API_KEY_2'];
-let commandExecutor = require('./commandExecutor');
+let slackApiToken = process.env["SLACK_API_KEY"];
+let slackApiToken2 = process.env["SLACK_API_KEY_2"];
+let commandExecutor = require("./commandExecutor");
 let lastKnownLocation;
 
-function processNewData(data) {
-    /*
+function processNewData(keyvalData) {
+  const data = keyvalData["chris-phone"].data;
+  if (!data) {
+    return;
+  }
+  const laptop = keyvalData["chris-laptop"].data ?? defaultLaptop;
+  /*
     if (workPcData && workPcData.data && workPcData.data.state === 'unknown') {
         return;
     }
@@ -161,128 +145,141 @@ function processNewData(data) {
     }
     */
 
-    let time = new Date();
-    let phoneOrientation = data['phone.orientation'];
-    let wifiLoc = data['phone.wifiloc'];
-    let bluetooth = data['phone.bluetooth'];
+  let time = new Date();
+  let phoneOrientation = data["phone.orientation"];
+  let wifiLoc = data["phone.wifiloc"];
+  let bluetooth = data["phone.bluetooth"];
 
-    let locationType;
-    if (wifiLoc === 'SessionCam') {
-        locationType = 'office';
-    } else if (wifiLoc === 'At home') {
-        locationType = 'home';
+  let locationType;
+  if (wifiLoc === "SessionCam") {
+    locationType = "office";
+  } else if (wifiLoc === "At home") {
+    locationType = "home";
+  }
+
+  if (locationType) {
+    lastKnownLocation = locationType;
+  }
+
+  let suggestedState;
+
+  if (callInProgress(data)) {
+    suggestedState = "talking_on_a_mobile_phone";
+  } else if (locationType === "office" && phoneOrientation === "upside down") {
+    suggestedState = "walking";
+  } else if (workPcActive() && !laptopActive()) {
+    // if the laptop was active, would be remoted in.
+    suggestedState = "working_on_a_desktop_pc.office";
+  } else if (laptopActive() && locationType === "home") {
+    suggestedState = "working_on_a_laptop.home";
+  } else if (bluetooth && bluetooth.startsWith("car-bluetooth")) {
+    suggestedState = "driving_a_car";
+  } else if (
+    stepsIncreasing(data) &&
+    dogWalkTime(time) &&
+    !locationType &&
+    lastKnownLocation === "home"
+  ) {
+    // walking, at dog-walking time, not at home, but was at home.
+    suggestedState = "walking_a_dog";
+  } else if (phoneOrientation === "upside down") {
+    suggestedState = "walking";
+  } else if (phoneOrientation !== "upside down" && locationType === "office") {
+    if (atAComputer() || !latestState) {
+      suggestedState = "working_on_a_desktop_pc.office";
+    } else {
+      suggestedState = "sitting_at_an_office_table";
     }
+  } else if (
+    passivePhonePosition(data) &&
+    locationType === "home" &&
+    !atAComputer()
+  ) {
+    suggestedState = "sitting_on_a_sofa.home";
+  }
 
-    if (locationType) {
-        lastKnownLocation = locationType;
-    }
+  // at-home - at-a-computer
+  // at-home phone-standing-up (lying down - with phone)
+  // at-home phone-passive-position (sitting)
 
-    let suggestedState;
-
-
-    if (callInProgress(data)) {
-        suggestedState = 'talking_on_a_mobile_phone';
-    } else if (locationType === 'office' && phoneOrientation === 'upside down') {
-        suggestedState = 'walking';
-    } else if (workPcActive() && !laptopActive()) { // if the laptop was active, would be remoted in.
-        suggestedState = 'working_on_a_desktop_pc.office';
-    } else if (laptopActive() && locationType === 'home') {
-        suggestedState = 'working_on_a_laptop.home';
-    } else if (bluetooth && bluetooth.startsWith('car-bluetooth')) {
-        suggestedState = 'driving_a_car';
-    } else if (stepsIncreasing(data) && dogWalkTime(time) && !locationType && lastKnownLocation === 'home') {
-        // walking, at dog-walking time, not at home, but was at home.
-        suggestedState = 'walking_a_dog';
-    } else if (phoneOrientation === 'upside down') {
-        suggestedState = 'walking';
-    } else if (phoneOrientation !== 'upside down' && locationType === 'office') {
-
-        if (atAComputer() || !latestState) { 
-            suggestedState = 'working_on_a_desktop_pc.office';
-        } else {
-            suggestedState = 'sitting_at_an_office_table';
+  if (suggestedState && latestState !== suggestedState) {
+    if (data["phone.locn"]) {
+      geoBoxes.forEach((box) => {
+        if (box.contains(data["phone.locn"])) {
+          console.log("Phone location within geobox:" + box.label);
         }
-    } else if (passivePhonePosition(data) && locationType === 'home' && !atAComputer()) {
-            suggestedState = 'sitting_on_a_sofa.home';
+      });
     }
 
-    // at-home - at-a-computer
-    // at-home phone-standing-up (lying down - with phone)
-    // at-home phone-passive-position (sitting)
-    
-    if (suggestedState && latestState !== suggestedState) {
+    console.log(`Updating state to '${suggestedState}' was (${latestState})`);
 
-
-        if (data['phone.locn']) {
-            geoBoxes.forEach((box) => {
-                if (box.contains(data['phone.locn'])) {
-                    console.log('Phone location within geobox:' + box.label);
-                }
-            });
-        }
-
-        console.log(`Updating state to '${suggestedState}' was (${latestState})`);
-
-        updateState(suggestedState);
-    }
-    previousData = data;
+    updateState(suggestedState);
+  }
+  previousData = data;
 }
 
 function passivePhonePosition(data) {
-    let value = data['phone.orientation'];
-    return value === 'face down' || value === 'face up' || value === 'on side';
+  let value = data["phone.orientation"];
+  return value === "face down" || value === "face up" || value === "on side";
 }
 
 function callInProgress(data) {
-    return data['phone.call-in-progress'];
+  return data["phone.call-in-progress"];
 }
 function dogWalkTime(time) {
-    return time.getHours() <= 7 || time.getHours() >= 18;
+  return time.getHours() <= 8 || time.getHours() >= 18;
 }
 
 function workPcActive() {
-    if (workPcData && workPcData.data && timestampIsRecent(workPcData.set_ms) && workPcData.data.state === 'unlocked') {
-        return true;
-    }
+  if (
+    workPcData &&
+    workPcData.data &&
+    timestampIsRecent(workPcData.set_ms) &&
+    workPcData.data.state === "unlocked"
+  ) {
+    return true;
+  }
 }
 
 function laptopActive() {
-    if (laptop && laptop.data && timestampIsRecent(laptop.set_ms) && laptop.data.state === 'unlocked') {
-        return true;
-    }
+  if (
+    laptop &&
+    laptop.data &&
+    timestampIsRecent(laptop.set_ms) &&
+    laptop.data.state === "unlocked"
+  ) {
+    return true;
+  }
 }
 function atAComputer(time) {
-    return laptopActive() || workPcActive();
+  return laptopActive() || workPcActive();
 }
 
-
 function timestampIsRecent(timestamp) {
-    let msDelta = Date.now() - timestamp;
-    let minutesDelta = (msDelta / 1000) / 60;
+  let msDelta = Date.now() - timestamp;
+  let minutesDelta = msDelta / 1000 / 60;
 
-    return minutesDelta < 6;
+  return minutesDelta < 6;
 }
 
 function stepsIncreasing(data) {
-    try {
-        return previousData && data['phone.steps'] > previousData['phone.steps'];
-    } catch (e) {
-        return false;
-    } 
+  try {
+    return previousData && data["phone.steps"] > previousData["phone.steps"];
+  } catch (e) {
+    return false;
+  }
 }
 
 function updateState(newState) {
-    latestState = newState;
+  latestState = newState;
 
-    let image = 'c:\\data\\profile\\' + newState + '.jpg';
+  let image = "c:\\data\\profile\\" + newState + ".jpg";
 
-    let slackCurl = `curl https://slack.com/api/users.setPhoto -F "image=@${image}" -F "token=${slackApiToken}`;
+  let slackCurl = `curl https://slack.com/api/users.setPhoto -F "image=@${image}" -F "token=${slackApiToken}`;
+  commandExecutor.executeAsync(slackCurl);
+
+  if (slackApiToken2) {
+    slackCurl = `curl https://slack.com/api/users.setPhoto -F "image=@${image}" -F "token=${slackApiToken2}`;
     commandExecutor.executeAsync(slackCurl);
-
-    if (slackApiToken2) {
-        slackCurl = `curl https://slack.com/api/users.setPhoto -F "image=@${image}" -F "token=${slackApiToken2}`;
-        commandExecutor.executeAsync(slackCurl);
-    }
+  }
 }
-
-
